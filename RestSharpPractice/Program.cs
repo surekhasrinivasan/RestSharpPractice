@@ -24,16 +24,38 @@ namespace RestSharpPractice
             IRestResponse response = client.Execute(request);
             var content = response.Content; // raw content as string
 
-            //Console.WriteLine(content);
-            var deserializedContent = JsonConvert.DeserializeObject(content); // returns as Object
+            // Console.WriteLine(content);
+            // var deserializedContent = JsonConvert.DeserializeObject(content); // returns as Object
 
-            Console.WriteLine(deserializedContent);
+            // Console.WriteLine(deserializedContent);
 
             // Outputs JSON Array from Object
-            //var output = JArray.FromObject(deserializedContent);
-            JArray output = new JArray(deserializedContent);
+            // var output = JArray.FromObject(deserializedContent);
+            // JArray output = new JArray(deserializedContent);
 
-            Console.WriteLine(output);
-        }   
+            // Console.WriteLine(output);
+
+            // Outputs JSON Array from String   
+            var output = JArray.Parse(content);
+
+            var connString = @"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=RestSharpDatabase;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
+
+            using (SqlConnection conn = new SqlConnection(connString))
+            {
+                conn.Open();
+
+                foreach (var item in output)
+                {
+                    SqlCommand insertCommand = new SqlCommand("INSERT INTO [User] (Id, Name, UserName, Email) VALUES (@Id, @Name, @UserName, @Email)", conn);
+                    insertCommand.Parameters.AddWithValue("@Id", item["id"].ToObject<int>());
+                    insertCommand.Parameters.AddWithValue("@Name", item["name"].ToString());
+                    insertCommand.Parameters.AddWithValue("@UserName", item["username"].ToString());
+                    insertCommand.Parameters.AddWithValue("@Email", item["email"].ToString());
+                    insertCommand.ExecuteNonQuery();
+                }
+                Console.WriteLine("Database Updated");
+                conn.Close();
+            }
+        }
     }
 }
